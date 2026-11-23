@@ -148,67 +148,69 @@ void heapify_up(MinHeap *heap, int index) {
 }
 
 void heap_insert(MinHeap *heap, Node *node) {
-    // TODO 6
-    // Guard against a NULL node and a full heap. Then put the pointer at
-    // index heap->size, increase size, and heapify_up from the index you
-    // just filled. A new leaf can only be misplaced upward, so one upward
-    // repair is enough. This function does no comparing of its own.
+    if (node == NULL || heap->size >= heap->capacity) {
+        return;
+    }
+    heap->data[heap->size] = node;
+    heap->size++;
+    heapify_up(heap, heap->size - 1);
 }
 
 void heapify_down(MinHeap *heap, int index) {
-    // TODO 7
-    // The mirror of heapify_up: repairs a node of lower priority than its
-    // position allows, by walking it toward the leaves.
-    //
-    // Loop:
-    //   - children of index are at 2*index + 1 and 2*index + 2
-    //   - track a `best` index, starting at index itself
-    //   - for each child, FIRST check it exists (child < heap->size), then
-    //     if it outranks data[best], best = that child
-    //   - if best is still index, stop
-    //   - otherwise swap index with best and continue from best
-    //
-    // The `child < heap->size` test is what keeps you inside the array.
+    while (true) {
+        int left = 2 * index + 1;
+        int right = 2 * index + 2;
+        int best = index;
+
+        if (left < heap->size && node_less(heap->data[left], heap->data[best])) {
+            best = left;
+        }
+        if (right < heap->size && node_less(heap->data[right], heap->data[best])) {
+            best = right;
+        }
+        if (best == index) {
+            break;
+        }
+        heap_swap(heap, index, best);
+        index = best;
+    }
 }
 
 Node *heap_extract_min(MinHeap *heap) {
-    // TODO 8
-    // Return NULL if the heap is empty. Otherwise save data[0] (your
-    // answer), move the LAST pointer into slot 0, decrease size,
-    // heapify_down from 0, and return the saved pointer.
-    //
-    // Do NOT free the node: the caller is about to put that same pointer
-    // into the closed list, and the struct never leaves node_pool.
-    // Adding to the closed list and printing is main's job, not this
-    // function's.
-    return NULL;
+    if (heap->size <= 0) {
+        return NULL;
+    }
+    Node *min = heap->data[0];
+    heap->data[0] = heap->data[heap->size - 1];
+    heap->size--;
+    heapify_down(heap, 0);
+    return min;
 }
 
 int heap_find(const MinHeap *heap, int x, int y) {
-    // TODO 9
-    // Return the INDEX of the node matching (x, y), or -1 if absent.
-    // A linear scan is correct here: a heap is ordered by priority, not by
-    // coordinates, so there is nothing to binary search on.
+    for (int i = 0; i < heap->size; i++) {
+        if (heap->data[i]->x == x && heap->data[i]->y == y) {
+            return i;
+        }
+    }
     return -1;
 }
 
 void heap_decrease_key(MinHeap *heap, int index, int new_g, int new_h) {
-    // TODO 10
-    // Check index is in range. Set the node's g and h to the new values,
-    // recompute f = g + h, then heapify_up from index.
-    //
-    // Only an upward repair is needed: lowering g lowers f, which can only
-    // make the node outrank its parent. It can never make it worse than
-    // its own children.
+    if (index < 0 || index >= heap->size) {
+        return;
+    }
+    Node *node = heap->data[index];
+    node->g = new_g;
+    node->h = new_h;
+    node->f = new_g + new_h;
+    heapify_up(heap, index);
 }
 
 bool heap_is_empty(const MinHeap *heap) {
-    // TODO 11
-    // One line.
-    return true;
+    return heap->size == 0;
 }
 
-// ---------------------------------------------- GIVEN: small line helpers
 
 static void strip_newline(char *line) {
     size_t length = strlen(line);
@@ -228,26 +230,29 @@ static bool is_blank(const char *line) {
     return true;
 }
 
-// ----------------------------------------------------------- input phases
 
 void read_insertions(MinHeap *open_list) {
-    // TODO 12
-    // The insertion phase runs its own inner fgets loop. That is how the
-    // two phases stay separate without a mode flag.
-    //
-    // Loop over lines from stdin:
-    //   - strip the newline, skip blank lines
-    //   - a line starting with "done" ends the phase -> return
-    //   - otherwise parse four ints with sscanf, format " %d , %d , %d , %d",
-    //     and check it returned 4. Each literal space in a scanf format
-    //     matches ANY run of whitespace, so the spacing in the test files
-    //     does not matter.
-    //   - create_node(x, y, g, h, NULL) and heap_insert it
-    //
-    // This phase prints nothing at all.
+    char line[MAX_LINE];
+
+    while (fgets(line, sizeof(line), stdin) != NULL) {
+        strip_newline(line);
+        if (is_blank(line)) {
+            continue;
+        }
+        if (strncmp(line, "done", 4) == 0) {
+            return;
+        }
+
+        int x = 0;
+        int y = 0;
+        int g = 0;
+        int h = 0;
+        if (sscanf(line, " %d , %d , %d , %d", &x, &y, &g, &h) == 4) {
+            heap_insert(open_list, create_node(x, y, g, h, NULL));
+        }
+    }
 }
 
-// ------------------------------------------------------------------ main
 
 int main(void) {
     MinHeap open_list;
@@ -260,48 +265,63 @@ int main(void) {
     while (fgets(line, sizeof(line), stdin) != NULL) {
         strip_newline(line);
 
-        // Blank lines and the "Commands:" marker produce no output.
         if (is_blank(line) || strncmp(line, "Commands:", 9) == 0) {
             continue;
         }
 
         if (strncmp(line, "[O] Insert", 10) == 0) {
-            // TODO 13: hand off to read_insertions
+            read_insertions(&open_list);
 
         } else if (strncmp(line, "[O] Extract", 11) == 0) {
-            // TODO 14
-            // Extract the min. If not NULL, add it to the closed list and
-            // print exactly:
-            //   Extracted Node (x, y), f = F, g = G, h = H
-            // If the heap was empty, print nothing.
+            Node *node = heap_extract_min(&open_list);
+            if (node != NULL) {
+                closed_list_add(&closed_list, node);
+                printf("Extracted Node (%d, %d), f = %d, g = %d, h = %d\n",
+                       node->x, node->y, node->f, node->g, node->h);
+            }
 
         } else if (strncmp(line, "[O] DecreaseKey", 15) == 0) {
-            // TODO 15
-            // Parse with "[O] DecreaseKey ( %d , %d ) , new_g = %d" and
-            // check it returned 3. heap_find the node; if index >= 0, take
-            // the Node * from open_list.data[index] BEFORE the call, pass
-            // the node's EXISTING h as new_h (only g changes), then print:
-            //   Decreased key for Node (x, y): f = F, g = G, h = H
-            // Read the fields after the call: the pointer stays valid even
-            // though heapify_up may have moved its slot.
+            int x = 0;
+            int y = 0;
+            int new_g = 0;
+            if (sscanf(line, "[O] DecreaseKey ( %d , %d ) , new_g = %d",
+                       &x, &y, &new_g) == 3) {
+                int index = heap_find(&open_list, x, y);
+                if (index >= 0) {
+                    Node *node = open_list.data[index];
+                    heap_decrease_key(&open_list, index, new_g, node->h);
+                    printf("Decreased key for Node (%d, %d): f = %d, g = %d, h = %d\n",
+                           node->x, node->y, node->f, node->g, node->h);
+                }
+            }
 
         } else if (strncmp(line, "[O] Find", 8) == 0) {
-            // TODO 16
-            // Parse "[O] Find ( %d , %d )". heap_find >= 0 means present.
-            // Print exactly one of:
-            //   Node (x, y) has been found
-            //   Node (x, y) has not been found
+            int x = 0;
+            int y = 0;
+            if (sscanf(line, "[O] Find ( %d , %d )", &x, &y) == 2) {
+                if (heap_find(&open_list, x, y) >= 0) {
+                    printf("Node (%d, %d) has been found\n", x, y);
+                } else {
+                    printf("Node (%d, %d) has not been found\n", x, y);
+                }
+            }
 
         } else if (strncmp(line, "[C] Find", 8) == 0) {
-            // TODO 17: same, but via closed_list_contains
+            int x = 0;
+            int y = 0;
+            if (sscanf(line, "[C] Find ( %d , %d )", &x, &y) == 2) {
+                if (closed_list_contains(&closed_list, x, y)) {
+                    printf("Node (%d, %d) has been found\n", x, y);
+                } else {
+                    printf("Node (%d, %d) has not been found\n", x, y);
+                }
+            }
 
         } else if (strncmp(line, "[O] IsEmpty", 11) == 0) {
-            // TODO 18: print True or False, capitalised exactly so
+            printf("%s\n", heap_is_empty(&open_list) ? "True" : "False");
 
         } else if (strncmp(line, "[C] IsEmpty", 11) == 0) {
-            // TODO 19
-            // There is no closed_list_is_empty in the provided header, so
-            // test the size field directly.
+            printf("%s\n", closed_list.size == 0 ? "True" : "False");
         }
     }
 
