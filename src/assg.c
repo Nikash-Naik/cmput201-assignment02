@@ -117,22 +117,17 @@ bool closed_list_contains(const ClosedList *list, int x, int y) {
     return false;
 }
 
-// ------------------------------------------------------- min-heap (open)
-
 bool node_less(const Node *a, const Node *b) {
-    // TODO 3  --  the most important function in the file
-    //
-    // Return true when node `a` has strictly higher priority than `b`.
-    // Priority order from the spec, highest precedence first:
-    //     1. smaller f    2. then smaller h    3. then smaller x    4. then smaller y
-    //
-    // Write it as a cascade: if the f values differ, decide on f; else if
-    // the h values differ, decide on h; and so on, with y last.
-    //
-    // All five nodes in test case 1-1 have f = 6, so a version comparing
-    // only f passes zero tests. Once this is right, nothing else in the
-    // file should ever compare two nodes directly.
-    return false;
+    if (a->f != b->f) {
+        return a->f < b->f;
+    }
+    if (a->h != b->h) {
+        return a->h < b->h;
+    }
+    if (a->x != b->x) {
+        return a->x < b->x;
+    }
+    return a->y <  b->y;
 }
 
 void heap_swap(MinHeap *heap, int i, int j) {
