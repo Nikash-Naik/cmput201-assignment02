@@ -109,11 +109,11 @@ void closed_list_add(ClosedList *list, Node *node) {
 }
 
 bool closed_list_contains(const ClosedList *list, int x, int y) {
-    // TODO 2
-    // Linear scan of indices 0 .. list->size - 1. Return true as soon as
-    // an entry matches BOTH x and y; false if you run out.
-    //
-    // The parameter is `const ClosedList *`: read through it, never assign.
+    for (int i = 0; i < list->size; i++) {
+        if (list->data[i]->x == x && list->data[i]->y == y) {
+            return true;
+        }
+    }
     return false;
 }
 
