@@ -137,18 +137,14 @@ void heap_swap(MinHeap *heap, int i, int j) {
 }
 
 void heapify_up(MinHeap *heap, int index) {
-    // TODO 5
-    // Repairs a node of higher priority than its position allows, by
-    // walking it toward the root.
-    //
-    // Loop while index > 0:
-    //   - parent is at (index - 1) / 2
-    //   - if the node at index does NOT outrank its parent, stop
-    //   - otherwise swap them and continue from the parent's index
-    //
-    // The index > 0 guard is load-bearing: in C, (0 - 1) / 2 is 0, since
-    // integer division truncates toward zero. Without it the root becomes
-    // its own parent and the loop never ends.
+    while (index > 0) {
+        int parent = (index - 1) / 2;
+        if (!node_less(heap->data[index], heap->data[parent])) {
+            break;
+        }
+        heap_swap(heap, index, parent);
+        index = parent;
+    }
 }
 
 void heap_insert(MinHeap *heap, Node *node) {
