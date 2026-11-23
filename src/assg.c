@@ -131,10 +131,9 @@ bool node_less(const Node *a, const Node *b) {
 }
 
 void heap_swap(MinHeap *heap, int i, int j) {
-    // TODO 4
-    // Exchange the two POINTERS at indices i and j via a temp Node *.
-    // Never copy struct contents: other code holds pointers to these
-    // nodes and they must keep pointing at the same structs.
+    Node *temp = heap->data[i];
+    heap->data[i] = heap->data[j];
+    heap->data[j] = temp;
 }
 
 void heapify_up(MinHeap *heap, int index) {
